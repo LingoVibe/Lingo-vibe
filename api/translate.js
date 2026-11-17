@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     const url =
       "https://api.mymemory.translated.net/get?q=" +
       encodeURIComponent(text) +
-      "&langpair=auto%7C" +
+      "&langpair=en%7C" +
       encodeURIComponent(targetLanguage);
 
     const response = await fetch(url);
