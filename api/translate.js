@@ -15,41 +15,43 @@ export default async function handler(req, res) {
       });
     }
 
-    const apiKey = process.env.LIBRETRANSLATE_API_KEY;
+    const languages = {
+      ht: "ht",
+      fr: "fr",
+      en: "en",
+      es: "es",
+      pt: "pt",
+      de: "de",
+      it: "it",
+      ar: "ar",
+      zh: "zh-CN"
+    };
 
-    if (!apiKey) {
-      return res.status(500).json({
-        error: "La clé API de traduction n'est pas encore configurée sur Vercel."
+    const targetLanguage = languages[target];
+
+    if (!targetLanguage) {
+      return res.status(400).json({
+        error: "Langue non prise en charge."
       });
     }
 
-    const response = await fetch(
-      "https://libretranslate.com/translate",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          q: text,
-          source: "auto",
-          target: target,
-          format: "text",
-          api_key: apiKey
-        })
-      }
-    );
+    const url =
+      "https://api.mymemory.translated.net/get?q=" +
+      encodeURIComponent(text) +
+      "&langpair=auto%7C" +
+      encodeURIComponent(targetLanguage);
 
+    const response = await fetch(url);
     const data = await response.json();
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error || "Le service de traduction a refusé la demande."
+    if (!response.ok || data.responseStatus !== 200) {
+      return res.status(502).json({
+        error: data.responseDetails || "La traduction a échoué."
       });
     }
 
     return res.status(200).json({
-      translatedText: data.translatedText
+      translatedText: data.responseData.translatedText
     });
 
   } catch (error) {
