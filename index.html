@@ -9,86 +9,47 @@
 <style>
 *{box-sizing:border-box}
 body{
-margin:0;
-font-family:Arial,sans-serif;
-background:#0b1020;
-color:white;
+margin:0;font-family:Arial,sans-serif;
+background:#0b1020;color:white;
 }
 header{
-padding:20px;
-background:#151d35;
-display:flex;
-justify-content:space-between;
-align-items:center;
-flex-wrap:wrap;
+padding:20px;background:#151d35;
+display:flex;justify-content:space-between;
+align-items:center;flex-wrap:wrap;gap:10px;
 }
-.logo{
-font-size:22px;
-font-weight:bold;
-color:#55e6c1;
-}
-.hero{
-text-align:center;
-padding:55px 15px;
-}
+.logo{font-size:22px;font-weight:bold;color:#55e6c1}
+.hero{text-align:center;padding:55px 15px}
 .hero h1{font-size:34px}
 .highlight{color:#55e6c1}
 .hero p{color:#cbd5e1}
 .panel{
-max-width:680px;
-margin:22px auto;
-padding:24px;
-background:#182440;
-border-radius:18px;
-width:92%;
+max-width:680px;margin:22px auto;padding:24px;
+background:#182440;border-radius:18px;width:92%;
 }
-label{
-display:block;
-margin:18px 0 8px;
-}
+label{display:block;margin:18px 0 8px}
 select,textarea,input{
-width:100%;
-padding:14px;
-border-radius:10px;
-border:1px solid #354363;
-background:#101a30;
-color:white;
+width:100%;padding:14px;border-radius:10px;
+border:1px solid #354363;background:#101a30;color:white;
 }
 textarea{height:130px;resize:vertical}
 button{
-width:100%;
-padding:15px;
-margin-top:18px;
-border:0;
-border-radius:10px;
-background:#55e6c1;
-color:#10152b;
-font-weight:bold;
-font-size:16px;
+width:100%;padding:15px;margin-top:18px;
+border:0;border-radius:10px;background:#55e6c1;
+color:#10152b;font-weight:bold;font-size:16px;
 cursor:pointer;
 }
 button:hover{background:#35c9a5}
+button:disabled{opacity:.6;cursor:wait}
 .result{
-margin-top:20px;
-padding:16px;
-background:#101a30;
-border-radius:12px;
-min-height:60px;
-white-space:pre-wrap;
-overflow-wrap:anywhere;
+margin-top:20px;padding:16px;background:#101a30;
+border-radius:12px;min-height:60px;
+white-space:pre-wrap;overflow-wrap:anywhere;
 }
 .plan{
-text-align:center;
-border:1px solid #354363;
-padding:18px;
-border-radius:14px;
-margin-top:15px;
+text-align:center;border:1px solid #354363;
+padding:18px;border-radius:14px;margin-top:15px;
 }
-footer{
-text-align:center;
-padding:30px;
-color:#aab6ce;
-}
+footer{text-align:center;padding:30px;color:#aab6ce}
 </style>
 </head>
 
@@ -106,7 +67,6 @@ color:#aab6ce;
 </section>
 
 <main class="panel">
-
 <h2>🎧 Traduisez votre contenu</h2>
 
 <label>Type de contenu</label>
@@ -124,18 +84,20 @@ color:#aab6ce;
 
 <label>Langue de traduction</label>
 <select id="language">
-<option>Créole haïtien</option>
-<option>Français</option>
-<option>Anglais</option>
-<option>Espagnol</option>
-<option>Portugais</option>
-<option>Allemand</option>
-<option>Italien</option>
-<option>Arabe</option>
-<option>Chinois</option>
+<option value="ht">Créole haïtien</option>
+<option value="fr">Français</option>
+<option value="en">Anglais</option>
+<option value="es">Espagnol</option>
+<option value="pt">Portugais</option>
+<option value="de">Allemand</option>
+<option value="it">Italien</option>
+<option value="ar">Arabe</option>
+<option value="zh">Chinois</option>
 </select>
 
-<button onclick="translateText()">🌍 Traduire maintenant</button>
+<button id="translateButton" onclick="translateText()">
+🌍 Traduire maintenant
+</button>
 
 <div class="result">
 <strong>📝 Résultat de traduction :</strong>
@@ -143,17 +105,14 @@ color:#aab6ce;
 </div>
 
 <p id="message"></p>
-
 </main>
 
 <section class="panel">
 <h2>💎 Nos abonnements</h2>
-
 <div class="plan">
 <h3>🆓 GRATUIT</h3>
 <p>Accès aux fonctions de base.</p>
 </div>
-
 <div class="plan">
 <h3>💎 PREMIUM</h3>
 <p>Fonctionnalités avancées et expérience améliorée.</p>
@@ -168,28 +127,58 @@ Créé avec ❤️ par Danny<br>
 </footer>
 
 <script>
-function translateText(){
+async function translateText(){
 
-const text=document.getElementById("source").value.trim();
-const file=document.getElementById("file").files[0];
-const language=document.getElementById("language").value;
-const output=document.getElementById("output");
-const message=document.getElementById("message");
+const text = document.getElementById("source").value.trim();
+const file = document.getElementById("file").files[0];
+const language = document.getElementById("language").value;
+const output = document.getElementById("output");
+const message = document.getElementById("message");
+const button = document.getElementById("translateButton");
 
-if(!text && !file){
-message.textContent="Veuillez saisir un texte ou importer un fichier.";
-output.textContent="Aucun contenu à traduire.";
+if(!text){
+if(file){
+message.textContent = "Fichier sélectionné : " + file.name +
+". La traduction automatique des fichiers audio et vidéo sera ajoutée dans une prochaine étape.";
+output.textContent = "Ajoutez les paroles ou le texte pour les traduire.";
+}else{
+message.textContent = "Veuillez saisir un texte à traduire.";
+output.textContent = "Aucun contenu à traduire.";
+}
 return;
 }
 
-if(!text && file){
-message.textContent="Fichier sélectionné : "+file.name;
-output.textContent="Le traitement audio et vidéo sera activé après connexion du moteur de traduction.";
-return;
+button.disabled = true;
+button.textContent = "⏳ Traduction en cours...";
+message.textContent = "";
+output.textContent = "Veuillez patienter...";
+
+try{
+const response = await fetch("/api/translate", {
+method: "POST",
+headers: {"Content-Type":"application/json"},
+body: JSON.stringify({
+text: text,
+target: language
+})
+});
+
+const data = await response.json();
+
+if(!response.ok){
+throw new Error(data.error || "La traduction a échoué.");
 }
 
-output.textContent="Votre texte est prêt pour une traduction en "+language+".";
-message.textContent="Le moteur de traduction doit encore être connecté pour effectuer la traduction réelle.";
+output.textContent = data.translatedText;
+message.textContent = "✅ Traduction terminée.";
+
+}catch(error){
+output.textContent = "La traduction n'a pas pu être effectuée.";
+message.textContent = "⚠️ " + error.message;
+}finally{
+button.disabled = false;
+button.textContent = "🌍 Traduire maintenant";
+}
 }
 </script>
 
