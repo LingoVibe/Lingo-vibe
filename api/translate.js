@@ -6,11 +6,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { text, target } = req.body || {};
+    const { text, target, source } = req.body || {};
 
     if (!text || !target) {
       return res.status(400).json({
-        error: "Texte ou langue manquant."
+        error: "Texte ou langue cible manquant."
       });
     }
 
@@ -26,26 +26,41 @@ export default async function handler(req, res) {
       zh: "zh-CN"
     };
 
+    const sourceLanguage = languages[source || "ht"];
     const targetLanguage = languages[target];
 
-    if (!targetLanguage) {
+    if (!sourceLanguage || !targetLanguage) {
       return res.status(400).json({
         error: "Langue non prise en charge."
+      });
+    }
+
+    if (sourceLanguage === targetLanguage) {
+      return res.status(200).json({
+        translatedText: text
       });
     }
 
     const url =
       "https://api.mymemory.translated.net/get?q=" +
       encodeURIComponent(text) +
-      "&langpair=en%7C" +
+      "&langpair=" +
+      encodeURIComponent(sourceLanguage) +
+      "%7C" +
       encodeURIComponent(targetLanguage);
 
     const response = await fetch(url);
     const data = await response.json();
 
-    if (!response.ok || data.responseStatus !== 200) {
+    if (
+      !response.ok ||
+      data.responseStatus !== 200 ||
+      !data.responseData
+    ) {
       return res.status(502).json({
-        error: data.responseDetails || "La traduction a échoué."
+        error:
+          data.responseDetails ||
+          "La traduction a échoué."
       });
     }
 
