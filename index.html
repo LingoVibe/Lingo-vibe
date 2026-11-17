@@ -1,1 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DannyVibe-Net</title>
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#0b1020;
+color:white;
+}
+header{
+padding:20px;
+background:#151d35;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+.logo{font-size:22px;font-weight:bold;color:#55e6c1}
+.hero{text-align:center;padding:50px 15px}
+.hero h1{font-size:32px}
+.highlight{color:#55e6c1}
+.panel{
+max-width:650px;
+margin:20px auto;
+padding:22px;
+background:#182440;
+border-radius:18px;
+}
+label{display:block;margin:18px 0 8px}
+select,textarea,input{
+width:100%;
+padding:14px;
+border-radius:10px;
+border:1px solid #354363;
+background:#101a30;
+color:white;
+}
+textarea{height:130px}
+button{
+width:100%;
+padding:15px;
+margin-top:20px;
+border:0;
+border-radius:10px;
+background:#55e6c1;
+color:#10152b;
+font-weight:bold;
+font-size:16px;
+}
+</style>
+</head>
+<body>
 
+<header>
+  <div class="logo">🌍 DannyVibe-Net</div>
+  <div>🎵 Music • Video</div>
+</header>
+
+<section class="hero">
+  <h1>Music sans <span class="highlight">frontières</span></h1>
+  <p>Découvrez la musique et les vidéos dans votre propre langue.</p>
+</section>
+
+<main class="panel">
+  <h2>🎧 Traduisez votre contenu</h2>
+
+  <label>Type de contenu</label>
+  <select id="type">
+    <option>Musique</option>
+    <option>Vidéo</option>
+    <option>Texte</option>
+  </select>
+
+  <label>Importer un fichier</label>
+  <input type="file" id="file" accept="audio/*,video/*">
+
+  <label>Texte ou paroles</label>
+  <textarea id="source" placeholder="Collez votre texte ici..."></textarea>
+
+  <label>Langue de traduction</label>
+  <select id="language">
+    <option>Créole haïtien</option>
+    <option>Français</option>
+    <option>Anglais</option>
+    <option>Espagnol</option>
+    <option>Portugais</option>
+    <option>Allemand</option>
+  </select>
+
+  <button onclick="translateText()">🌍 Traduire maintenant</button>
+  <p id="message"></p>
+</main>
+
+<div class="panel">
+  <h2>💎 Nos forfaits</h2>
+  <p>Gratuit : accès aux fonctions de base.</p>
+  <p>Premium : expérience avancée.</p>
+</div>
+
+<footer>
+  DannyVibe-Net<br>
+  Créé avec ❤️ par Danny<br>
+  © 2026
+</footer><script>
+function translateText(){
+
+ const text = document.getElementById("source").value.trim();
+ const file = document.getElementById("file").files[0];
+ const language = document.getElementById("language").value;
+ const message = document.getElementById("message");
+
+ if(!text && !file){
+   message.textContent = "Veuillez saisir un texte ou importer un fichier.";
+   return;
+ }
+
+ if(!text && file){
+   message.textContent = "Fichier sélectionné. Le service audio et vidéo sera connecté prochainement.";
+   return;
+ }
+
+ message.textContent =
+ "Votre texte est prêt pour une traduction en " + language +
+ ". Le moteur de traduction sera connecté dans la prochaine étape.";
+}
+</script>
+
+</body>
+</html>
