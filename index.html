@@ -127,59 +127,95 @@ Créé avec ❤️ par Danny<br>
 </footer>
 
 <script>
-async function translateText(){
 
-const text = document.getElementById("source").value.trim();
-const file = document.getElementById("file").files[0];
-const language = document.getElementById("language").value;
-const output = document.getElementById("output");
-const message = document.getElementById("message");
-const button = document.getElementById("translateButton");
+async function translateText() {
+  const textArea = document.getElementById("source");
+  const file = document.getElementById("file").files[0];
+  const language = document.getElementById("language").value;
+  const output = document.getElementById("output");
+  const message = document.getElementById("message");
+  const button = document.getElementById("translateButton");
 
-if(!text){
-if(file){
-message.textContent = "Fichier sélectionné : " + file.name +
-". La traduction automatique des fichiers audio et vidéo sera ajoutée dans une prochaine étape.";
-output.textContent = "Ajoutez les paroles ou le texte pour les traduire.";
-}else{
-message.textContent = "Veuillez saisir un texte à traduire.";
-output.textContent = "Aucun contenu à traduire.";
+  let text = textArea.value.trim();
+
+  if (!text && !file) {
+    message.textContent = "Veuillez ajouter un texte ou un fichier audio.";
+    return;
+  }
+
+  if (file && file.size > 4 * 1024 * 1024) {
+    message.textContent = "Le fichier doit faire moins de 4 Mo.";
+    return;
+  }
+
+  button.disabled = true;
+
+  try {
+    // 1. Extraire les paroles du fichier audio
+    if (file && !text) {
+      button.textContent = "🎧 Analyse de la musique...";
+      message.textContent = "Reconnaissance des paroles en cours...";
+      output.textContent = "Veuillez patienter...";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const transcriptionResponse = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData
+      });
+
+      const transcriptionData = await transcriptionResponse.json();
+
+      if (!transcriptionResponse.ok) {
+        throw new Error(
+          transcriptionData.error || "La transcription a échoué."
+        );
+      }
+
+      text = transcriptionData.transcript;
+
+      if (!text) {
+        throw new Error("Aucune parole n'a été détectée.");
+      }
+
+      textArea.value = text;
+      message.textContent = "✅ Paroles extraites. Traduction en cours...";
+    }
+
+    // 2. Traduire les paroles ou le texte
+    button.textContent = "🌍 Traduction en cours...";
+
+    const response = await fetch("/api/translate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text: text,
+        target: language
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "La traduction a échoué.");
+    }
+
+    output.textContent = data.translatedText;
+    message.textContent = "✅ Traduction terminée avec succès !";
+
+  } catch (error) {
+    output.textContent = "La traduction n'a pas pu être effectuée.";
+    message.textContent = "⚠️ " + error.message;
+
+  } finally {
+    button.disabled = false;
+    button.textContent = "🌍 Traduire maintenant";
+  }
 }
-return;
-}
 
-button.disabled = true;
-button.textContent = "⏳ Traduction en cours...";
-message.textContent = "";
-output.textContent = "Veuillez patienter...";
-
-try{
-const response = await fetch("/api/translate", {
-method: "POST",
-headers: {"Content-Type":"application/json"},
-body: JSON.stringify({
-text: text,
-target: language
-})
-});
-
-const data = await response.json();
-
-if(!response.ok){
-throw new Error(data.error || "La traduction a échoué.");
-}
-
-output.textContent = data.translatedText;
-message.textContent = "✅ Traduction terminée.";
-
-}catch(error){
-output.textContent = "La traduction n'a pas pu être effectuée.";
-message.textContent = "⚠️ " + error.message;
-}finally{
-button.disabled = false;
-button.textContent = "🌍 Traduire maintenant";
-}
-}
 </script>
 
 </body>
