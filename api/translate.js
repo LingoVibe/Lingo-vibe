@@ -1,3 +1,4 @@
+
 import { franc } from "franc-min";
 
 export default async function handler(req, res) {
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
       zh: "zh-CN"
     };
 
-    const targetLanguage = languages[target];
+    const targetLanguage = languages[target.toLowerCase()];
 
     if (!targetLanguage) {
       return res.status(400).json({
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
 
     if (!sourceLanguage) {
       return res.status(400).json({
-        error: "Impossible de détecter la langue. Essayez un texte plus long."
+        error: "Langue non détectée. Écrivez un texte plus long."
       });
     }
 
@@ -66,13 +67,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const url =
-      "https://api.mymemory.translated.net/get?q=" +
-      encodeURIComponent(text) +
-      "&langpair=" +
-      encodeURIComponent(sourceLanguage) +
-      "%7C" +
-      encodeURIComponent(targetLanguage);
+    const langPair = `${sourceLanguage}|${targetLanguage}`;
+
+    const url = new URL(
+      "https://api.mymemory.translated.net/get"
+    );
+
+    url.searchParams.set("q", text);
+    url.searchParams.set("langpair", langPair);
 
     const response = await fetch(url);
     const data = await response.json();
@@ -89,6 +91,8 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
+    console.error("Translation error:", error);
+
     return res.status(500).json({
       error: "Erreur de connexion au service de traduction."
     });
