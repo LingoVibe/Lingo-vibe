@@ -126,9 +126,23 @@ Créé avec ❤️ par Danny<br>
 © 2026 - Tous droits réservés
 </footer>
 
-<script>
+<script type="module">
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
-async function translateText() {
+let transcriber = null;
+
+async function getTranscriber(message) {
+  if (!transcriber) {
+    message.textContent = "⏳ Téléchargement du modèle Whisper...";
+    transcriber = await pipeline(
+      "automatic-speech-recognition",
+      "Xenova/whisper-tiny"
+    );
+  }
+  return transcriber;
+}
+
+window.translateText = async function () {
   const textArea = document.getElementById("source");
   const file = document.getElementById("file").files[0];
   const language = document.getElementById("language").value;
@@ -143,47 +157,40 @@ async function translateText() {
     return;
   }
 
-  if (file && file.size > 4 * 1024 * 1024) {
-    message.textContent = "Le fichier doit faire moins de 4 Mo.";
+  if (file && !text && !file.type.startsWith("audio/")) {
+    message.textContent = "Pour le moment, choisissez un fichier audio.";
     return;
   }
 
   button.disabled = true;
 
   try {
-    // 1. Extraire les paroles du fichier audio
     if (file && !text) {
-      button.textContent = "🎧 Analyse de la musique...";
-      message.textContent = "Reconnaissance des paroles en cours...";
-      output.textContent = "Veuillez patienter...";
+      message.textContent = "🎧 Préparation de la transcription...";
+      button.textContent = "⏳ Analyse audio...";
 
-      const formData = new FormData();
-      formData.append("file", file);
+      const model = await getTranscriber(message);
+      const audioUrl = URL.createObjectURL(file);
 
-      const transcriptionResponse = await fetch("/api/transcribe", {
-        method: "POST",
-        body: formData
-      });
+      try {
+        const result = await model(audioUrl, {
+          chunk_length_s: 30,
+          stride_length_s: 5
+        });
 
-      const transcriptionData = await transcriptionResponse.json();
-
-      if (!transcriptionResponse.ok) {
-        throw new Error(
-          transcriptionData.error || "La transcription a échoué."
-        );
+        text = result.text || "";
+      } finally {
+        URL.revokeObjectURL(audioUrl);
       }
 
-      text = transcriptionData.transcript;
-
-      if (!text) {
-        throw new Error("Aucune parole n'a été détectée.");
+      if (!text.trim()) {
+        throw new Error("Aucune parole détectée dans ce fichier.");
       }
 
       textArea.value = text;
       message.textContent = "✅ Paroles extraites. Traduction en cours...";
     }
 
-    // 2. Traduire les paroles ou le texte
     button.textContent = "🌍 Traduction en cours...";
 
     const response = await fetch("/api/translate", {
@@ -204,7 +211,7 @@ async function translateText() {
     }
 
     output.textContent = data.translatedText;
-    message.textContent = "✅ Traduction terminée avec succès !";
+    message.textContent = "✅ Traduction terminée !";
 
   } catch (error) {
     output.textContent = "La traduction n'a pas pu être effectuée.";
@@ -214,8 +221,7 @@ async function translateText() {
     button.disabled = false;
     button.textContent = "🌍 Traduire maintenant";
   }
-}
-
+};
 </script>
 
 </body>
