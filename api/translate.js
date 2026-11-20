@@ -1,6 +1,38 @@
 
 import { franc } from "franc-min";
 
+function splitText(text, maxLength = 150) {
+  const words = text.match(/\S+\s*/g) || [];
+  const chunks = [];
+  let current = "";
+
+  for (const word of words) {
+    if (current.length + word.length > maxLength && current) {
+      chunks.push(current.trim());
+      current = "";
+    }
+
+    if (word.length > maxLength) {
+      if (current) {
+        chunks.push(current.trim());
+        current = "";
+      }
+
+      for (let i = 0; i < word.length; i += maxLength) {
+        chunks.push(word.slice(i, i + maxLength));
+      }
+    } else {
+      current += word;
+    }
+  }
+
+  if (current.trim()) {
+    chunks.push(current.trim());
+  }
+
+  return chunks;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -51,12 +83,11 @@ export default async function handler(req, res) {
       cmn: "zh-CN"
     };
 
-    const sourceLanguage =
-      sourceLanguages[detectedLanguage];
+    const sourceLanguage = sourceLanguages[detectedLanguage];
 
     if (!sourceLanguage) {
       return res.status(400).json({
-        error: "Langue non détectée. Écrivez un texte plus long."
+        error: "Langue non détectée. Essayez avec un texte plus long."
       });
     }
 
@@ -67,34 +98,45 @@ export default async function handler(req, res) {
       });
     }
 
-    const langPair = `${sourceLanguage}|${targetLanguage}`;
+    const chunks = splitText(text, 150);
+    const translations = [];
 
-    const url = new URL(
-      "https://api.mymemory.translated.net/get"
-    );
+    for (const chunk of chunks) {
+      const url = new URL(
+        "https://api.mymemory.translated.net/get"
+      );
 
-    url.searchParams.set("q", text);
-    url.searchParams.set("langpair", langPair);
+      url.searchParams.set("q", chunk);
+      url.searchParams.set(
+        "langpair",
+        `${sourceLanguage}|${targetLanguage}`
+      );
 
-    const response = await fetch(url);
-    const data = await response.json();
+      const response = await fetch(url);
+      const data = await response.json();
 
-    if (!response.ok || data.responseStatus !== 200) {
-      return res.status(502).json({
-        error: data.responseDetails || "La traduction a échoué."
-      });
+      if (!response.ok || data.responseStatus !== 200) {
+        throw new Error(
+          data.responseDetails || "La traduction a échoué."
+        );
+      }
+
+      translations.push(
+        data.responseData.translatedText
+      );
     }
 
     return res.status(200).json({
       detectedLanguage: sourceLanguage,
-      translatedText: data.responseData.translatedText
+      translatedText: translations.join(" ")
     });
 
   } catch (error) {
     console.error("Translation error:", error);
 
-    return res.status(500).json({
-      error: "Erreur de connexion au service de traduction."
+    return res.status(502).json({
+      error: error.message ||
+        "Erreur de connexion au service de traduction."
     });
   }
 }
