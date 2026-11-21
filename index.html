@@ -1,22 +1,24 @@
 
 <script type="module">
 import { pipeline } from
-"https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+  "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
 let transcriber = null;
 
 async function getTranscriber(message) {
   if (!transcriber) {
-    message.textContent = "⏳ Chargement du modèle Whisper...";
+    message.textContent = "⏳ Chargement du modèle Whisper Base...";
 
     transcriber = await pipeline(
       "automatic-speech-recognition",
       "Xenova/whisper-base"
+    );
   }
+
   return transcriber;
 }
 
-// Langues disponibles pour la lecture vocale
+// Langues pour la lecture vocale
 const voiceLanguages = {
   ht: "ht-HT",
   fr: "fr-FR",
@@ -29,13 +31,13 @@ const voiceLanguages = {
   zh: "zh-CN"
 };
 
-// Convertir audio en mono 16 kHz et le découper
+// Préparer le fichier audio en mono 16 kHz
 async function prepareAudio(file) {
   const AudioContextClass =
     window.AudioContext || window.webkitAudioContext;
 
   if (!AudioContextClass) {
-    throw new Error("AudioContext non disponible sur cet appareil.");
+    throw new Error("AudioContext non disponible.");
   }
 
   const context = new AudioContextClass();
@@ -50,11 +52,14 @@ async function prepareAudio(file) {
 
     const mono = new Float32Array(sourceLength);
 
-    for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+    for (let channel = 0;
+         channel < decoded.numberOfChannels;
+         channel++) {
       const channelData = decoded.getChannelData(channel);
 
       for (let i = 0; i < sourceLength; i++) {
-        mono[i] += channelData[i] / decoded.numberOfChannels;
+        mono[i] += channelData[i] /
+          decoded.numberOfChannels;
       }
     }
 
@@ -83,7 +88,7 @@ async function prepareAudio(file) {
   }
 }
 
-// Analyser l'audio par morceaux de 30 secondes
+// Reconnaissance par morceaux de 30 secondes
 async function transcribeInChunks(file, message) {
   const model = await getTranscriber(message);
 
@@ -92,15 +97,20 @@ async function transcribeInChunks(file, message) {
   const audio = await prepareAudio(file);
 
   const sampleRate = 16000;
-  const chunkSeconds = 30;
-  const chunkSize = sampleRate * chunkSeconds;
+  const chunkSize = sampleRate * 30;
 
-  const totalChunks = Math.ceil(audio.length / chunkSize);
+  const totalChunks = Math.ceil(
+    audio.length / chunkSize
+  );
+
   const transcripts = [];
 
   for (let i = 0; i < totalChunks; i++) {
     const start = i * chunkSize;
-    const end = Math.min(start + chunkSize, audio.length);
+    const end = Math.min(
+      start + chunkSize,
+      audio.length
+    );
 
     const chunk = audio.slice(start, end);
 
@@ -115,12 +125,12 @@ async function transcribeInChunks(file, message) {
       sampling_rate: sampleRate
     });
 
-    if (result.text) {
+    if (result && result.text) {
       transcripts.push(result.text.trim());
     }
   }
 
-  return transcripts.join(" ");
+  return transcripts.join(" ").trim();
 }
 
 // Lire la traduction
@@ -133,12 +143,17 @@ function speakTranslation(text, language, message) {
 
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = voiceLanguages[language] || "fr-FR";
+  const utterance =
+    new SpeechSynthesisUtterance(text);
+
+  utterance.lang =
+    voiceLanguages[language] || "fr-FR";
+
   utterance.rate = 0.95;
   utterance.pitch = 1;
 
-  const voices = window.speechSynthesis.getVoices();
+  const voices =
+    window.speechSynthesis.getVoices();
 
   const selectedVoice = voices.find(voice =>
     voice.lang.toLowerCase().startsWith(
@@ -151,18 +166,27 @@ function speakTranslation(text, language, message) {
   }
 
   utterance.onstart = () => {
-    message.textContent = "🔊 Lecture de la traduction...";
-    document.getElementById("stopButton").style.display = "block";
+    message.textContent =
+      "🔊 Lecture de la traduction...";
+
+    document.getElementById("stopButton").style.display =
+      "block";
   };
 
   utterance.onend = () => {
-    message.textContent = "✅ Lecture terminée.";
-    document.getElementById("stopButton").style.display = "none";
+    message.textContent =
+      "✅ Lecture terminée.";
+
+    document.getElementById("stopButton").style.display =
+      "none";
   };
 
   utterance.onerror = () => {
-    message.textContent = "⚠️ Impossible de lire la traduction.";
-    document.getElementById("stopButton").style.display = "none";
+    message.textContent =
+      "⚠️ Impossible de lire la traduction.";
+
+    document.getElementById("stopButton").style.display =
+      "none";
   };
 
   window.speechSynthesis.speak(utterance);
@@ -171,68 +195,147 @@ function speakTranslation(text, language, message) {
 // Arrêter la lecture
 window.stopAudio = function() {
   window.speechSynthesis.cancel();
-  document.getElementById("stopButton").style.display = "none";
+
+  document.getElementById("stopButton").style.display =
+    "none";
+
   document.getElementById("message").textContent =
     "⏹ Lecture arrêtée.";
 };
 
-// Traduction principale
+// Fonction principale de traduction
 window.translateText = async function() {
-  const textArea = document.getElementById("source");
-  const file = document.getElementById("file").files[0];
-  const language = document.getElementById("language").value;
-  const mode = document.getElementById("mode").value;
+  const textArea =
+    document.getElementById("source");
 
-  const output = document.getElementById("output");
-  const message = document.getElementById("message");
-  const button = document.getElementById("translateButton");
+  const file =
+    document.getElementById("file").files[0];
+
+  const language =
+    document.getElementById("language").value;
+
+  const mode =
+    document.getElementById("mode").value;
+
+  const output =
+    document.getElementById("output");
+
+  const message =
+    document.getElementById("message");
+
+  const button =
+    document.getElementById("translateButton");
 
   let text = textArea.value.trim();
 
-  if (
-  file &&
-  !file.type.startsWith("audio/") &&
-  !file.type.startsWith("video/")
-) {
-  message.textContent =
-    "Veuillez choisir un fichier audio ou vidéo.";
-  return;
-}
-
-  if (file && !text && !file.type.startsWith("audio/")) {
+  if (!text && !file) {
     message.textContent =
-      "Veuillez choisir un fichier audio.";
+      "Veuillez ajouter un texte ou un fichier audio.";
+
     return;
   }
 
-  button.disabled = true;
-  window.speechSynthesis?.cancel();
+  if (file) {
+    const isAudio =
+      file.type.startsWith("audio/");
 
-  try {
-    // Transcription audio
-    if (file && !text) {
-      text = await transcribeInChunks(file, message);
+    const isVideo =
+      file.type.startsWith("video/");
 
-      // Transcription audio
-if (file) {
-  text = await transcribeInChunks(file, message);
+    const hasSupportedExtension =
+      /\.(mp3|wav|m4a|ogg|webm|mp4|aac|flac)$/i.test(file.name);
 
-  if (!text.trim()) {
-    throw new Error("Aucune parole détectée dans ce fichier.");
+    if (!isAudio && !isVideo && !hasSupportedExtension) {
+      message.textContent =
+        "Veuillez choisir un fichier audio ou vidéo compatible.";
+
+      return;
+    }
   }
 
-  textArea.value = text;
-  message.textContent =
-    "✅ Paroles extraites. Traduction en cours...";
-}
+  button.disabled = true;
+  output.textContent = "";
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  try {
+    // Si un fichier est choisi, analyser le fichier
+    if (file) {
+      text = await transcribeInChunks(file, message);
+
+      if (!text.trim()) {
+        throw new Error(
+          "Aucune parole détectée dans ce fichier."
+        );
+      }
+
+      textArea.value = text;
+
+      message.textContent =
+        "✅ Paroles extraites. Traduction en cours...";
+    }
 
     // Traduction du texte
-    button.textContent = "🌍 Traduction en cours...";
+    button.textContent =
+      "🌍 Traduction en cours...";
 
     const response = await fetch("/api/translate", {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json"
       },
-      body: if (file) {
-  text = await transcribeInChunks(file, message);
+
+      body: JSON.stringify({
+        text: text,
+        target: language
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "La traduction a échoué."
+      );
+    }
+
+    if (!data.translatedText) {
+      throw new Error(
+        "Aucun texte traduit reçu."
+      );
+    }
+
+    output.textContent = data.translatedText;
+
+    // Audio vers audio
+    if (mode === "audio") {
+      speakTranslation(
+        data.translatedText,
+        language,
+        message
+      );
+    } else {
+      message.textContent =
+        "✅ Traduction terminée !";
+    }
+
+  } catch (error) {
+    console.error(error);
+
+    output.textContent =
+      "La traduction n'a pas pu être effectuée.";
+
+    message.textContent =
+      "⚠️ " + error.message;
+
+  } finally {
+    button.disabled = false;
+
+    button.textContent =
+      "🌍 Traduire maintenant";
+  }
+};
+</script>
