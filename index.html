@@ -11,8 +11,7 @@ async function getTranscriber(message) {
 
     transcriber = await pipeline(
       "automatic-speech-recognition",
-      "Xenova/whisper-tiny"
-    );
+      "Xenova/whisper-base"
   }
   return transcriber;
 }
@@ -190,11 +189,15 @@ window.translateText = async function() {
 
   let text = textArea.value.trim();
 
-  if (!text && !file) {
-    message.textContent =
-      "Veuillez ajouter un texte ou un fichier audio.";
-    return;
-  }
+  if (
+  file &&
+  !file.type.startsWith("audio/") &&
+  !file.type.startsWith("video/")
+) {
+  message.textContent =
+    "Veuillez choisir un fichier audio ou vidéo.";
+  return;
+}
 
   if (file && !text && !file.type.startsWith("audio/")) {
     message.textContent =
@@ -210,14 +213,18 @@ window.translateText = async function() {
     if (file && !text) {
       text = await transcribeInChunks(file, message);
 
-      if (!text.trim()) {
-        throw new Error("Aucune parole détectée dans ce fichier.");
-      }
+      // Transcription audio
+if (file) {
+  text = await transcribeInChunks(file, message);
 
-      textArea.value = text;
-      message.textContent =
-        "✅ Paroles extraites. Traduction en cours...";
-    }
+  if (!text.trim()) {
+    throw new Error("Aucune parole détectée dans ce fichier.");
+  }
+
+  textArea.value = text;
+  message.textContent =
+    "✅ Paroles extraites. Traduction en cours...";
+}
 
     // Traduction du texte
     button.textContent = "🌍 Traduction en cours...";
@@ -227,40 +234,5 @@ window.translateText = async function() {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        text: text,
-        target: language
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "La traduction a échoué.");
-    }
-
-    output.textContent = data.translatedText;
-
-    // Audio vers audio
-    if (mode === "audio") {
-      speakTranslation(
-        data.translatedText,
-        language,
-        message
-      );
-    } else {
-      message.textContent = "✅ Traduction terminée !";
-    }
-
-  } catch (error) {
-    output.textContent =
-      "La traduction n'a pas pu être effectuée.";
-
-    message.textContent = "⚠️ " + error.message;
-
-  } finally {
-    button.disabled = false;
-    button.textContent = "🌍 Traduire maintenant";
-  }
-};
-</script>
+      body: if (file) {
+  text = await transcribeInChunks(file, message);
