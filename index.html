@@ -82,17 +82,10 @@ footer{text-align:center;padding:30px;color:#aab6ce}
 <label>Texte ou paroles</label>
 <textarea id="source" placeholder="Collez votre texte ou vos paroles ici..."></textarea>
 
-<label>Langue de traduction</label>
-<select id="language">
-<option value="ht">Créole haïtien</option>
-<option value="fr">Français</option>
-<option value="en">Anglais</option>
-<option value="es">Espagnol</option>
-<option value="pt">Portugais</option>
-<option value="de">Allemand</option>
-<option value="it">Italien</option>
-<option value="ar">Arabe</option>
-<option value="zh">Chinois</option>
+<label>Mode de traduction</label>
+<select id="mode">
+  <option value="text">🎧 Audio → Texte traduit</option>
+  <option value="audio">🔊 Audio → Audio traduit</option>
 </select>
 
 <button id="translateButton" onclick="translateText()">
