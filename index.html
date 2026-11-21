@@ -1,157 +1,5 @@
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DannyVibe-Net</title>
-
-<style>
-*{box-sizing:border-box}
-body{
-margin:0;font-family:Arial,sans-serif;
-background:#0b1020;color:white;
-}
-header{
-padding:20px;background:#151d35;
-display:flex;justify-content:space-between;
-align-items:center;flex-wrap:wrap;gap:10px;
-}
-.logo{font-size:22px;font-weight:bold;color:#55e6c1}
-.hero{text-align:center;padding:45px 15px}
-.hero h1{font-size:34px}
-.highlight{color:#55e6c1}
-.hero p{color:#cbd5e1}
-.panel{
-max-width:680px;margin:22px auto;padding:24px;
-background:#182440;border-radius:18px;width:92%;
-}
-label{display:block;margin:18px 0 8px}
-select,textarea,input{
-width:100%;padding:14px;border-radius:10px;
-border:1px solid #354363;background:#101a30;color:white;
-}
-textarea{height:130px;resize:vertical}
-button{
-width:100%;padding:15px;margin-top:18px;
-border:0;border-radius:10px;background:#55e6c1;
-color:#10152b;font-weight:bold;font-size:16px;
-cursor:pointer;
-}
-button:hover{background:#35c9a5}
-button:disabled{opacity:.6;cursor:wait}
-.stop{
-background:#ff6b6b;color:white;
-}
-.stop:hover{background:#e85050}
-.result{
-margin-top:20px;padding:16px;background:#101a30;
-border-radius:12px;min-height:60px;
-white-space:pre-wrap;overflow-wrap:anywhere;
-}
-.plan{
-text-align:center;border:1px solid #354363;
-padding:18px;border-radius:14px;margin-top:15px;
-}
-footer{text-align:center;padding:30px;color:#aab6ce}
-#message{line-height:1.6}
-@media(max-width:500px){
-.hero h1{font-size:27px}
-.panel{padding:18px}
-}
-</style>
-</head>
-
-<body>
-
-<header>
-<div class="logo">🌍 DannyVibe-Net</div>
-<div>🎵 Music • 🎬 Video • 🌐 Languages</div>
-</header>
-
-<section class="hero">
-<h1>Music sans <span class="highlight">frontières</span></h1>
-<p>Découvrez la musique et les vidéos dans votre propre langue.</p>
-<p>Bienvenue sur DannyVibe-Net !</p>
-</section>
-
-<main class="panel">
-
-<h2>🎧 Traduisez votre contenu</h2>
-
-<label>Type de contenu</label>
-<select id="type">
-<option value="music">Musique</option>
-<option value="video">Vidéo</option>
-<option value="text">Texte</option>
-</select>
-
-<label>Importer un fichier audio</label>
-<input type="file" id="file" accept="audio/*">
-
-<label>Texte ou paroles</label>
-<textarea id="source"
-placeholder="Collez votre texte ou vos paroles ici..."></textarea>
-
-<label>Langue de traduction</label>
-<select id="language">
-<option value="ht">Créole haïtien</option>
-<option value="fr">Français</option>
-<option value="en">Anglais</option>
-<option value="es">Espagnol</option>
-<option value="pt">Portugais</option>
-<option value="de">Allemand</option>
-<option value="it">Italien</option>
-<option value="ar">Arabe</option>
-<option value="zh">Chinois</option>
-</select>
-
-<label>Mode de traduction</label>
-<select id="mode">
-<option value="text">📝 Audio → Texte traduit</option>
-<option value="audio">🔊 Audio → Audio traduit (voix IA)</option>
-</select>
-
-<button id="translateButton" onclick="translateText()">
-🌍 Traduire maintenant
-</button>
-
-<button id="stopButton" class="stop" onclick="stopAudio()" style="display:none">
-⏹ Arrêter la voix
-</button>
-
-<div class="result">
-<strong>📝 Résultat de traduction :</strong>
-<p id="output">Votre traduction apparaîtra ici.</p>
-</div>
-
-<p id="message"></p>
-
-</main>
-
-<section class="panel">
-<h2>💎 Nos abonnements</h2>
-
-<div class="plan">
-<h3>🆓 GRATUIT</h3>
-<p>Accès aux fonctions de base.</p>
-</div>
-
-<div class="plan">
-<h3>💎 PREMIUM</h3>
-<p>Fonctionnalités avancées et expérience améliorée.</p>
-<p>Disponible prochainement.</p>
-</div>
-</section>
-
-<footer>
-<strong>DannyVibe-Net</strong><br>
-Créé avec ❤️ par Danny<br>
-© 2026 - Tous droits réservés
-</footer>
-
 <script type="module">
-
 import { pipeline } from
 "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
@@ -159,19 +7,17 @@ let transcriber = null;
 
 async function getTranscriber(message) {
   if (!transcriber) {
-    message.textContent =
-      "⏳ Téléchargement du modèle Whisper...";
+    message.textContent = "⏳ Chargement du modèle Whisper...";
 
     transcriber = await pipeline(
       "automatic-speech-recognition",
       "Xenova/whisper-tiny"
     );
   }
-
   return transcriber;
 }
 
-// Langues pour la voix du navigateur
+// Langues disponibles pour la lecture vocale
 const voiceLanguages = {
   ht: "ht-HT",
   fr: "fr-FR",
@@ -184,20 +30,111 @@ const voiceLanguages = {
   zh: "zh-CN"
 };
 
-// Fonction pour lire la traduction
-function speakTranslation(text, language, message) {
+// Convertir audio en mono 16 kHz et le découper
+async function prepareAudio(file) {
+  const AudioContextClass =
+    window.AudioContext || window.webkitAudioContext;
 
+  if (!AudioContextClass) {
+    throw new Error("AudioContext non disponible sur cet appareil.");
+  }
+
+  const context = new AudioContextClass();
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const decoded = await context.decodeAudioData(buffer);
+
+    const targetRate = 16000;
+    const sourceRate = decoded.sampleRate;
+    const sourceLength = decoded.length;
+
+    const mono = new Float32Array(sourceLength);
+
+    for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+      const channelData = decoded.getChannelData(channel);
+
+      for (let i = 0; i < sourceLength; i++) {
+        mono[i] += channelData[i] / decoded.numberOfChannels;
+      }
+    }
+
+    const outputLength = Math.floor(
+      sourceLength * targetRate / sourceRate
+    );
+
+    const resampled = new Float32Array(outputLength);
+
+    for (let i = 0; i < outputLength; i++) {
+      const position = i * sourceRate / targetRate;
+      const index = Math.floor(position);
+      const fraction = position - index;
+
+      const first = mono[index] || 0;
+      const second = mono[index + 1] || first;
+
+      resampled[i] =
+        first * (1 - fraction) + second * fraction;
+    }
+
+    return resampled;
+
+  } finally {
+    await context.close();
+  }
+}
+
+// Analyser l'audio par morceaux de 30 secondes
+async function transcribeInChunks(file, message) {
+  const model = await getTranscriber(message);
+
+  message.textContent = "🎧 Préparation du fichier audio...";
+
+  const audio = await prepareAudio(file);
+
+  const sampleRate = 16000;
+  const chunkSeconds = 30;
+  const chunkSize = sampleRate * chunkSeconds;
+
+  const totalChunks = Math.ceil(audio.length / chunkSize);
+  const transcripts = [];
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize;
+    const end = Math.min(start + chunkSize, audio.length);
+
+    const chunk = audio.slice(start, end);
+
+    const progress = Math.round(
+      ((i + 1) / totalChunks) * 100
+    );
+
+    message.textContent =
+      `🎧 Analyse audio : ${progress}% (${i + 1}/${totalChunks})`;
+
+    const result = await model(chunk, {
+      sampling_rate: sampleRate
+    });
+
+    if (result.text) {
+      transcripts.push(result.text.trim());
+    }
+  }
+
+  return transcripts.join(" ");
+}
+
+// Lire la traduction
+function speakTranslation(text, language, message) {
   if (!("speechSynthesis" in window)) {
     message.textContent =
-      "⚠️ Votre navigateur ne prend pas en charge la lecture vocale.";
-
+      "⚠️ Lecture vocale non disponible.";
     return;
   }
 
   window.speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
-
   utterance.lang = voiceLanguages[language] || "fr-FR";
   utterance.rate = 0.95;
   utterance.pitch = 1;
@@ -215,7 +152,7 @@ function speakTranslation(text, language, message) {
   }
 
   utterance.onstart = () => {
-    message.textContent = "🔊 Lecture de la traduction en cours...";
+    message.textContent = "🔊 Lecture de la traduction...";
     document.getElementById("stopButton").style.display = "block";
   };
 
@@ -232,16 +169,16 @@ function speakTranslation(text, language, message) {
   window.speechSynthesis.speak(utterance);
 }
 
-// Bouton arrêter la voix
+// Arrêter la lecture
 window.stopAudio = function() {
   window.speechSynthesis.cancel();
   document.getElementById("stopButton").style.display = "none";
-  document.getElementById("message").textContent = "⏹ Lecture arrêtée.";
+  document.getElementById("message").textContent =
+    "⏹ Lecture arrêtée.";
 };
 
-// Fonction principale
+// Traduction principale
 window.translateText = async function() {
-
   const textArea = document.getElementById("source");
   const file = document.getElementById("file").files[0];
   const language = document.getElementById("language").value;
@@ -266,29 +203,12 @@ window.translateText = async function() {
   }
 
   button.disabled = true;
+  window.speechSynthesis?.cancel();
 
   try {
-
-    // 1. Transcription audio
+    // Transcription audio
     if (file && !text) {
-
-      message.textContent = "🎧 Analyse de l'audio...";
-      button.textContent = "⏳ Analyse audio...";
-
-      const model = await getTranscriber(message);
-      const audioUrl = URL.createObjectURL(file);
-
-      try {
-        const result = await model(audioUrl, {
-          chunk_length_s: 30,
-          stride_length_s: 5
-        });
-
-        text = result.text || "";
-
-      } finally {
-        URL.revokeObjectURL(audioUrl);
-      }
+      text = await transcribeInChunks(file, message);
 
       if (!text.trim()) {
         throw new Error("Aucune parole détectée dans ce fichier.");
@@ -299,7 +219,7 @@ window.translateText = async function() {
         "✅ Paroles extraites. Traduction en cours...";
     }
 
-    // 2. Traduction
+    // Traduction du texte
     button.textContent = "🌍 Traduction en cours...";
 
     const response = await fetch("/api/translate", {
@@ -319,41 +239,28 @@ window.translateText = async function() {
       throw new Error(data.error || "La traduction a échoué.");
     }
 
-    // 3. Affichage du texte traduit
     output.textContent = data.translatedText;
 
-    // 4. Mode Audio → Audio
+    // Audio vers audio
     if (mode === "audio") {
-
-      message.textContent =
-        "✅ Traduction terminée. Préparation de la voix...";
-
       speakTranslation(
         data.translatedText,
         language,
         message
       );
-
     } else {
-
       message.textContent = "✅ Traduction terminée !";
     }
 
   } catch (error) {
-
     output.textContent =
       "La traduction n'a pas pu être effectuée.";
 
     message.textContent = "⚠️ " + error.message;
 
   } finally {
-
     button.disabled = false;
     button.textContent = "🌍 Traduire maintenant";
   }
 };
-
 </script>
-
-</body>
-</html>
